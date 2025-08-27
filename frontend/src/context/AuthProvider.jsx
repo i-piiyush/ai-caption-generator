@@ -12,7 +12,7 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [wokeUp, setWokeUp] = useState(false);
   const [refresh, setRefresh] = useState(false);
-  const api = "http://localhost:3000"; // your backend URL
+  const api = "https://ai-caption-generator-1-xi6u.onrender.com"; // your backend URL
   const navigate = useNavigate();
 
   // check server health + fetch user

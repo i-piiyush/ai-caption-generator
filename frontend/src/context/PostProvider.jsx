@@ -9,7 +9,7 @@ export const usePost = () => useContext(postContext);
 const PostProvider = ({ children }) => {
   const [post, setPost] = useState(null);
   const [isGenerating, setIsGenerating] = useState(null);
-  const api = "http://localhost:3000";
+  const api = "https://ai-caption-generator-1-xi6u.onrender.com";
 
   const createPost = async (file) => {
     if (!file) {

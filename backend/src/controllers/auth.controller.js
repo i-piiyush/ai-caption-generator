@@ -33,6 +33,9 @@ const registerController = async (req, res) => {
 
     res.cookie("token", token, {
       expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      httpOnly: true, // JS cannot access cookie → prevents XSS
+      secure: true, // only sent over HTTPS (must be HTTPS in prod!)
+      sameSite: "none", // allows cross-site requests (needed if frontend + backend are on different domains)
     });
 
     res.status(201).json({ message: "user created successfully", user });
@@ -61,6 +64,9 @@ const loginController = async (req, res) => {
   const token = jwt.sign(payload, process.env.JWT_SECRET);
   res.cookie("token", token, {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    httpOnly: true,
+    secure: true, // only send over HTTPS
+    sameSite: "none", // required for cross-site cookies
   });
 
   isPasswordValid = await bcyrpt.compare(password, user.password);
@@ -86,15 +92,15 @@ const userController = async (req, res) => {
 };
 const logoutController = (req, res) => {
   try {
-    res.clearCookie("token")
+    res.clearCookie("token");
 
     res.status(200).json({
-      message:"logout successfull"
-    })
+      message: "logout successfull",
+    });
   } catch (error) {
     res.json({
-      message:error
-    })
+      message: error,
+    });
   }
 };
 
@@ -102,5 +108,5 @@ module.exports = {
   registerController,
   loginController,
   userController,
-  logoutController
+  logoutController,
 };
