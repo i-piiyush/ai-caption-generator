@@ -13,7 +13,7 @@ const AppRoutes = () => {
 
   useEffect(()=>{
     if(user){
-      loggedIn(true)
+      setLoggedIn(true)
     }
     else{false}
   },[user])
