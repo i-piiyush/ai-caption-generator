@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "../components/Login";
 import Signup from "../components/Signup";
@@ -9,12 +9,20 @@ import CreatePost from "../components/CreatePost";
 
 const AppRoutes = () => {
   const { user } = useAuth();
+  const [loggedIn,setLoggedIn] = useState(false)
+
+  useEffect(()=>{
+    if(user){
+      loggedIn(true)
+    }
+    else{false}
+  },[user])
   return (
     <>
       <Routes>
         <Route
           path="/"
-          element={user ? <Profile /> : <Navigate to="/login" />}
+          element={loggedIn ? <Profile /> : <Navigate to="/login" />}
         />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Signup />} />
