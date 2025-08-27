@@ -10,11 +10,13 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://ai-caption-generator-gules.vercel.app", // tumhara frontend
+    origin: [
+      "http://localhost:5173", // local React dev server
+      "https://ai-caption-generator-gules.vercel.app" // deployed frontend
+    ],
     credentials: true,
   })
 );
-
 app.use("/auth", authRoutes);
 app.use("/posts", postsRoutes);
 app.use("/health", healthRoute);
