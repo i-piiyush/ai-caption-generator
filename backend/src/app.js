@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://ai-caption-generator-gules.vercel.app/", // tumhara frontend
+    origin: "https://ai-caption-generator-gules.vercel.app", // tumhara frontend
     credentials: true,
   })
 );
