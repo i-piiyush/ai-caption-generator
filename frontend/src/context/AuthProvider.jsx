@@ -1,29 +1,27 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import toast from "react-hot-toast";
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import apiClient from "../services/api"; // Import our centralized API client
-import Loader from "../components/Loader"; // Your loading component
+import toast from "react-hot-toast";
+import apiClient from "../services/api";
+import Loader from "../components/Loader";
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Single loading state for simplicity
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // This function checks for an active session when the app loads.
   const checkSession = useCallback(async () => {
     try {
       const response = await apiClient.get("/auth/user");
       setUser(response.data);
     } catch (error) {
-      console.log("No active session or server is asleep.", error.message);
       setUser(null);
     } finally {
-      setLoading(false);
+      if (loading) setLoading(false);
     }
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
     checkSession();
@@ -32,10 +30,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     setLoading(true);
     try {
-      const response = await apiClient.post("/auth/login", { username, password });
-      await checkSession(); // Re-check session to get user data
-      toast.success(response.data.message);
-      navigate("/"); // Navigate to the main page
+      await apiClient.post("/auth/login", { username, password });
+      await checkSession();
+      navigate("/");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
       setLoading(false);
@@ -45,11 +42,10 @@ export const AuthProvider = ({ children }) => {
   const register = async (formData) => {
     setLoading(true);
     try {
-      const response = await apiClient.post("/auth/register", formData, {
+      await apiClient.post("/auth/register", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      await checkSession(); // Re-check session after registering
-      toast.success(response.data.message);
+      await checkSession();
       navigate("/");
     } catch (error) {
       toast.error(error.response?.data?.message || "Registration failed");
@@ -61,14 +57,16 @@ export const AuthProvider = ({ children }) => {
     try {
       await apiClient.post("/auth/logout");
       setUser(null);
-      toast.success("Logout successful");
-      navigate("/login"); // Redirect to login page after logout
+      navigate("/login");
     } catch (error) {
-      toast.error(error.message || "Logout failed");
+      toast.error("Logout failed. Please try again.");
     }
   };
 
-  const value = { user, loading, register, login, logout };
+  const value = useMemo(
+    () => ({ user, loading, login, register, logout, checkSession }),
+    [user, loading, checkSession]
+  );
 
   return (
     <AuthContext.Provider value={value}>

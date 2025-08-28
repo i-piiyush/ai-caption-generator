@@ -4,10 +4,7 @@ import { Toaster } from "react-hot-toast";
 const App = () => {
   return (
     <>
-      <div>
-        <Toaster />
-      </div>
-
+      <Toaster position="top-center" reverseOrder={false} />
       <AppRoutes />
     </>
   );

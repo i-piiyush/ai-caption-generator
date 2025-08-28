@@ -40,7 +40,7 @@ const Profile = () => {
           <p className="w-[70%] text-center text-sm leading-[1] opacity-70">
             {user.user.bio}
           </p>
-          <a href="https://github.com/piiyushhh" target="_blank" rel="noopener noreferrer" className="bg-black text-white px-16 py-2 text-sm font-semibold rounded-md mt-5">
+          <a href="https://github.com/i-piiyush/ai-caption-generator" target="_blank" rel="noopener noreferrer" className="bg-black text-white px-16 py-2 text-sm font-semibold rounded-md mt-5">
             Star my GitHub
           </a>
         </div>
