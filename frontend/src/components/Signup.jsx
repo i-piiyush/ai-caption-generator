@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthProvider";
-import { Link,  useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const Signup = () => {
-  const { register,user } = useAuth();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     fullname: "",
@@ -12,48 +12,30 @@ const Signup = () => {
     pfp: null,
   });
   const [previewUrl, setPreviewUrl] = useState(null);
-  const navigate = useNavigate()
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        pfp: file,
-      }));
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
+      setFormData((prev) => ({ ...prev, pfp: file }));
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    register(
-      formData.username,
-      formData.password,
-      formData.fullname,
-      formData.bio,
-      formData.pfp
-    );
-
-    if(user){
-      navigate("/")
-    }
-
-
+    const data = new FormData();
+    data.append("username", formData.username);
+    data.append("password", formData.password);
+    data.append("fullname", formData.fullname);
+    data.append("bio", formData.bio);
+    if (formData.pfp) data.append("pfp", formData.pfp);
+    
+    register(data);
   };
 
   return (

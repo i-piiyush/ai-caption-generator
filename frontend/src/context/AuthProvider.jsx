@@ -1,124 +1,78 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import axios from "axios";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import Loader from "../components/Loader";
+import apiClient from "../services/api"; // Import our centralized API client
+import Loader from "../components/Loader"; // Your loading component
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
-const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [wokeUp, setWokeUp] = useState(false);
-  const [refresh, setRefresh] = useState(false);
-  const api = "https://ai-caption-generator-1-xi6u.onrender.com"; // your backend URL
+  const [loading, setLoading] = useState(true); // Single loading state for simplicity
   const navigate = useNavigate();
 
-  // check server health + fetch user
-  useEffect(() => {
-    const checkHealth = async () => {
-      try {
-        const res = await axios.get(`${api}/health`, { withCredentials: true });
-        if (res.data.status === "ready") {
-          setWokeUp(true);
-        } else {
-          setWokeUp(false);
-        }
-      } catch (error) {
-        console.log("health check failed", error);
-        setWokeUp(false);
-      }
-    };
-
-    // poll health until backend is up
-    checkHealth();
-    let interval;
-    if (!wokeUp) {
-      interval = setInterval(checkHealth, 5000);
-    }
-
-    return () => clearInterval(interval);
-  }, [wokeUp]); // <— notice: no fetchUser here
-  useEffect(() => {
-    if (!wokeUp) return; // only run when server is ready
-
-    const fetchUser = async () => {
-      try {
-        const res = await axios.get(`${api}/auth/user`, {
-          withCredentials: true,
-        });
-        setUser(res.data);
-        console.log("user logged in", res.data);
-      } catch (error) {
-        console.log("error fetching user: ", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, [wokeUp, refresh]);
-
-  // auth actions
-  const login = async (username, password) => {
+  // This function checks for an active session when the app loads.
+  const checkSession = useCallback(async () => {
     try {
-      const res = await axios.post(
-        `${api}/auth/login`,
-        { username, password },
-        { withCredentials: true }
-      );
+      const response = await apiClient.get("/auth/user");
+      setUser(response.data);
+    } catch (error) {
+      console.log("No active session or server is asleep.", error.message);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-      toast.success(res.data.message);
-      navigate("/");
-      setRefresh((r) => !r);
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  const login = async (username, password) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.post("/auth/login", { username, password });
+      await checkSession(); // Re-check session to get user data
+      toast.success(response.data.message);
+      navigate("/"); // Navigate to the main page
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
+      setLoading(false);
     }
   };
 
-  const register = async (username, password, fullname, bio, pfp) => {
+  const register = async (formData) => {
+    setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("username", username);
-      formData.append("password", password);
-      formData.append("fullname", fullname);
-      formData.append("bio", bio);
-      if (pfp) formData.append("pfp", pfp);
-
-      const res = await axios.post(`${api}/auth/register`, formData, {
-        withCredentials: true,
+      const response = await apiClient.post("/auth/register", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      toast.success(res.data.message);
+      await checkSession(); // Re-check session after registering
+      toast.success(response.data.message);
       navigate("/");
-      setRefresh((r) => !r);
     } catch (error) {
       toast.error(error.response?.data?.message || "Registration failed");
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
-      const res = await axios.post(`${api}/auth/logout`, null, {
-        withCredentials: true,
-      });
+      await apiClient.post("/auth/logout");
       setUser(null);
       toast.success("Logout successful");
-      console.log(res.data);
+      navigate("/login"); // Redirect to login page after logout
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Logout failed");
     }
   };
 
+  const value = { user, loading, register, login, logout };
+
   return (
-    <AuthContext.Provider
-      value={{ user, loading, register, login, logout, wokeUp }}
-    >
-      {!loading && wokeUp ? children : <Loader />}
+    <AuthContext.Provider value={value}>
+      {loading ? <Loader /> : children}
     </AuthContext.Provider>
   );
 };
-
-export default AuthProvider;
