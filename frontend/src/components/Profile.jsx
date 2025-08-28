@@ -26,6 +26,7 @@ const Profile = () => {
     return <Loader />;
   }
 
+
   return (
     <>
       <div className="w-full min-h-screen md:hidden tracking-tighter relative pb-24">
