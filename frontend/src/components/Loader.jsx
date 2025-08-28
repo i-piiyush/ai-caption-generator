@@ -23,7 +23,7 @@ const Loader = () => {
       }`}
     >
       <ShinyText
-        text="[WAKING UP THE BACKEND]"
+        text="[LOADING]"
         disabled={false}
         speed={3}
         className="tracking-widest text-2xl"
