@@ -33,6 +33,7 @@ const Profile = () => {
 
   const handleLogout = () => {
     logout();
+    navigate("auth/login")
   };
 
   return (
@@ -54,7 +55,7 @@ const Profile = () => {
             {user.user.bio}
           </p>
           <a
-            href="https://github.com/piiyushhh" // It's better to add the actual link here
+            href="https://github.com/piiyushhh" 
             target="_blank"
             rel="noopener noreferrer"
             className="bg-black text-white px-16 py-2 text-sm font-semibold rounded-md mt-5"
