@@ -1,52 +1,89 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
-import { useEffect, useState } from "react";
+import { usePosts } from "../context/PostProvider"; // Import the posts context
+import { useEffect, useState, useCallback } from "react";
+import apiClient from "../services/api"; // Import our API client
+import Loader from "../components/Loader"; // Your loading component
 
 const ViewPost = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { isGenerating, regenerateCaption } = usePosts(); // Get post functions
   const [post, setPost] = useState(null);
-  const posts = user.post;
+  const [loading, setLoading] = useState(true);
+
+  // This function fetches a single post from the backend
+  const fetchPost = useCallback(async () => {
+    try {
+      // First, try to find the post in the currently logged-in user's data
+      const localPost = user?.posts?.find((p) => p._id === id);
+      if (localPost) {
+        setPost(localPost);
+      } else {
+        // If not found locally, fetch it directly from the API
+        const response = await apiClient.get(`/posts/${id}`);
+        setPost(response.data.post);
+      }
+    } catch (error) {
+      console.error("Failed to fetch post", error);
+      // Optionally, navigate to a 404 page
+    } finally {
+      setLoading(false);
+    }
+  }, [id, user?.posts]);
 
   useEffect(() => {
-    const findPost = (id) => {
-      return posts.find((post) => {
-        return post._id === id;
-      });
-    };
+    fetchPost();
+  }, [fetchPost]);
 
-    const foundPost = findPost(id);
-    setPost(foundPost)
-    console.log(post);
-    
-  }, [post]);
+  const handleRegenerate = async () => {
+    const updatedPost = await regenerateCaption(id);
+    if (updatedPost) {
+      setPost(updatedPost); // Update local state with the new caption
+    }
+  };
 
-  if(!post){
-    return <h1>no post found</h1>
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (!post) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <h1 className="text-2xl">Post not found.</h1>
+      </div>
+    );
   }
 
   return (
     <>
-      {/* Mobile-only content */}
-      <div className="md:hidden min-h-screen bg-gradient-to-tr from-gray-100 via-white to-gray-100 text-gray-900 flex flex-col items-center py-12 px-6 font-sans">
+      <div className="md:hidden min-h-screen bg-gray-100 text-gray-900 flex flex-col items-center py-12 px-6">
         <div className="max-w-lg w-full flex flex-col gap-8">
-          <div className="w-full aspect-[4/5] bg-gray-300  flex items-center justify-center text-gray-500 h-[40rem] font-semibold text-2xl select-none cursor-pointer ease-in-out ">
-         <img src={post.post} alt="post " className="h-full w-full object-cover" />
+          <div className="w-full aspect-[4/5] bg-gray-300 overflow-hidden">
+            <img src={post.post} alt="User post" className="h-full w-full object-cover" />
           </div>
-          <span className="uppercase text-gray-600 tracking-wide font-medium text-xs">
-            Caption
-          </span>
+
+          <div className="flex justify-between items-center">
+             <span className="uppercase text-gray-600 tracking-wide font-medium text-xs">
+               AI Generated Caption
+             </span>
+             <button 
+                onClick={handleRegenerate} 
+                disabled={isGenerating}
+                className="text-xs font-semibold bg-gray-200 px-3 py-1 rounded-md disabled:opacity-50"
+              >
+               {isGenerating ? "Generating..." : "Regenerate"}
+             </button>
+          </div>
+          
           <p className="text-base font-light leading-relaxed tracking-wide">
             {post.caption}
           </p>
         </div>
       </div>
-
-      {/* Desktop-only message */}
-      <div className="hidden md:flex  min-h-screen items-center justify-center text-center p-6 bg-gray-100 text-gray-800 font-sans">
-        <h1 className="text-xl font-semibold">
-          This website is only for mobile users
-        </h1>
+      <div className="hidden md:flex min-h-screen items-center justify-center text-center">
+        <h1 className="text-xl">This app is designed for mobile use.</h1>
       </div>
     </>
   );
